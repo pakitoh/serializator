@@ -1,6 +1,7 @@
 const { appendFile, writeFile } = require('fs');
 const { createServer } = require('net');
 const { setInterval } = require('timers');
+const { EOL } = require('os');
 
 const kill = require('./killer');
 
@@ -57,8 +58,7 @@ function dataHandler(receivedData, connection) {
   const inputData = dataNotWritten + receivedData;
   dataNotWritten = '';
   const batch = [];
-  inputData.split('\n')
-    .filter((s) => s !== '')
+  inputData.split(EOL)
     .forEach((token) => {
       if (token === END_KEYWORD) {
         closeServer();

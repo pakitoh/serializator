@@ -85,7 +85,7 @@ describe('TCP server', () => {
     it('should write in log file data when is 9 digits plus newline', () => {
       const data = '123456789\n';
 
-      server.dataHandler(data);
+      server.dataHandler(data, connection);
 
       expect(appendFile).toHaveBeenCalledWith(filename, data, server.erroHandler);
     });
@@ -95,7 +95,7 @@ describe('TCP server', () => {
       const data2 = '111';
       const data = `${data1}${data2}`;
 
-      server.dataHandler(data);
+      server.dataHandler(data, connection);
 
       expect(appendFile).toHaveBeenCalledWith(filename, data1, server.erroHandler);
       expect(server.getDataNotWritten()).toBe(data2);
@@ -105,10 +105,10 @@ describe('TCP server', () => {
       const data1 = '123456789\n';
       const data2 = '111';
       const data = `${data1}${data2}`;
-      server.dataHandler(data);
+      server.dataHandler(data, connection);
       const data3 = '111111\n';
 
-      server.dataHandler(data3);
+      server.dataHandler(data3, connection);
 
       expect(appendFile).toHaveBeenCalledWith(filename, data1, server.erroHandler);
       expect(appendFile).toHaveBeenCalledWith(filename, data2 + data3, server.erroHandler);
@@ -117,9 +117,9 @@ describe('TCP server', () => {
 
     it('should NOT write in log file already received valid inputs', () => {
       const data = '123456789\n';
-      server.dataHandler(data);
+      server.dataHandler(data, connection);
 
-      server.dataHandler(data);
+      server.dataHandler(data, connection);
 
       expect(appendFile).toHaveBeenCalledTimes(1);
     });
@@ -127,7 +127,7 @@ describe('TCP server', () => {
     it('should shutdown server when received "terminate" as input', () => {
       const data = 'terminate\n';
 
-      server.dataHandler(data, connection, server);
+      server.dataHandler(data, connection);
 
       expect(appendFile).not.toHaveBeenCalled();
       expect(mockServer.close).toHaveBeenCalled();
@@ -135,6 +135,15 @@ describe('TCP server', () => {
 
     it('should discard non numeric data otherwise and close connection', () => {
       const data = 'different\n';
+
+      server.dataHandler(data, connection);
+
+      expect(appendFile).not.toHaveBeenCalled();
+      expect(connection.destroy).toHaveBeenCalled();
+    });
+
+    it('should discard numeric data with no required length and close connection', () => {
+      const data = '123\n';
 
       server.dataHandler(data, connection);
 
@@ -164,7 +173,7 @@ describe('TCP server', () => {
 
     it('should increment received unique numbers counter when unique number received', () => {
       const data1 = '111111111\n';
-      server.dataHandler(data1);
+      server.dataHandler(data1, connection);
 
       server.getReport();
 
@@ -174,7 +183,7 @@ describe('TCP server', () => {
 
     it('should increment received unique numbers counter when another unique number received in the same call as well', () => {
       const data = '111111111\n222222222\n';
-      server.dataHandler(data);
+      server.dataHandler(data, connection);
 
       server.getReport();
 
@@ -184,8 +193,8 @@ describe('TCP server', () => {
 
     it('should increment duplicate numbers counter when duplicate number received', () => {
       const data1 = '111111111\n';
-      server.dataHandler(data1);
-      server.dataHandler(data1);
+      server.dataHandler(data1, connection);
+      server.dataHandler(data1, connection);
 
       server.getReport();
 
@@ -195,9 +204,9 @@ describe('TCP server', () => {
 
     it('should increment duplicate numbers counter when duplicate number received', () => {
       const data1 = '111111111\n';
-      server.dataHandler(data1);
+      server.dataHandler(data1, connection);
       const data2 = '111111111\n';
-      server.dataHandler(data2);
+      server.dataHandler(data2, connection);
 
       server.getReport();
 
@@ -207,7 +216,7 @@ describe('TCP server', () => {
 
     it('should clear unique and duplicates counters after creating report', () => {
       const data1 = '111111111\n';
-      server.dataHandler(data1);
+      server.dataHandler(data1, connection);
       server.getReport();
 
       server.getReport();
