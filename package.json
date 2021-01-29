@@ -4,7 +4,8 @@
   "description": "TCP server that serializate numbers to a log file",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
+    "start": "node index.js",
+    "test": "npx jest --coverage",
     "posttest": "npx eslint ."
   },
   "author": "Paco Ramírez <paco.ramirez.romero@gmail.com>",
