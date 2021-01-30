@@ -44,9 +44,16 @@ It looks like a I/O bounded problem so [Nodejs](https://nodejs.org/) seems like 
 
 ## Usage
 
+### Install
+
+To install the node package and its dependencies
+```
+npm install
+```
+
 ### Run tests
 
-To build the image
+To run tests
 ```
 npm test
 ```
@@ -54,7 +61,6 @@ npm test
 ### Start the server
 
 #### 1. Using [Docker](https://www.docker.com/)
-
 
 First you have to build the image
 ```
