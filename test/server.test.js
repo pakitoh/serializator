@@ -20,6 +20,7 @@ const connection = {
   setEncoding: jest.fn(),
   on: jest.fn(),
   destroy: jest.fn(),
+  unref: jest.fn(),
 };
 kill.mockImplementation(() => {});
 

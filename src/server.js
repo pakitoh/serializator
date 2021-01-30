@@ -10,7 +10,7 @@ const MAX_CONNECTIONS = 5;
 const ENCODING = 'utf8';
 const DATA_EVENT = 'data';
 const ERROR_EVENT = 'error';
-const VALID_COMPLETE_NUMBER_REGEX = /^\d{9}?$/;
+const VALID_COMPLETE_NUMBER_REGEX = /^\d{9}$/;
 const VALID_INCOMPLETE_NUMBER_REGEX = /^\d{1,8}$/;
 const LOG_FILENAME = 'numbers.log';
 const REPORT_INTERVAL = 10000;
@@ -54,32 +54,43 @@ function getReport(err) {
   clearReport();
 }
 
+function writeToFile(writeBatch) {
+  if (writeBatch.length > 0) {
+    appendFile(LOG_FILENAME, writeBatch.join(''), erroHandler);
+  }
+}
+
 function dataHandler(receivedData, connection) {
   const inputData = dataNotWritten + receivedData;
   dataNotWritten = '';
-  const batch = [];
-  inputData.split(EOL)
-    .forEach((token) => {
-      if (token === END_KEYWORD) {
-        closeServer();
-      } else if (VALID_COMPLETE_NUMBER_REGEX.test(token)) {
-        if (validInputs.has(token)) {
-          report.duplicates += 1;
-        } else {
-          validInputs.add(token);
-          batch.push(`${token}\n`);
-          report.unique += 1;
-        }
-      } else if (VALID_INCOMPLETE_NUMBER_REGEX.test(token)) {
-        dataNotWritten = token;
+  const tokens = inputData.split(EOL);
+  const last = tokens.length - 1;
+  let keepProcessing = true;
+  const writeBatch = [];
+  for (let i = 0; i < tokens.length && keepProcessing; i += 1) {
+    if (tokens[i] === END_KEYWORD) {
+      keepProcessing = false;
+      closeServer();
+    } else if (VALID_COMPLETE_NUMBER_REGEX.test(tokens[i])) {
+      if (validInputs.has(tokens[i])) {
+        report.duplicates += 1;
       } else {
-        connection.destroy();
-        clients.delete(connection);
+        validInputs.add(tokens[i]);
+        writeBatch.push(`${tokens[i]}${EOL}`);
+        report.unique += 1;
       }
-    });
-  if (batch.length > 0) {
-    appendFile(LOG_FILENAME, batch.join(''), erroHandler);
+    } else if (VALID_INCOMPLETE_NUMBER_REGEX.test(tokens[i]) && i === last) {
+      dataNotWritten = tokens[i];
+    } else if (tokens[i] === '' && i === last) {
+      // do nothing
+    } else {
+      keepProcessing = false;
+      connection.destroy();
+      connection.unref();
+      clients.delete(connection);
+    }
   }
+  writeToFile(writeBatch);
 }
 
 function connectionListener(connection) {
